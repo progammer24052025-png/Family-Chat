@@ -8,7 +8,8 @@ export default defineConfig({
     allowedHosts: [
       'localhost',
       '[IP_ADDRESS]',
-      'postmeningeal-homeoplastic-janiyah.ngrok-free.dev'
+      'postmeningeal-homeoplastic-janiyah.ngrok-free.dev',
+      'buddy-chat-bwy9.onrender.com'
     ],
   },
 })
