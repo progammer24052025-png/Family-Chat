@@ -14,17 +14,29 @@ function ChatContainer() {
     isMessagesLoading,
     subscribeToMessages,
     unsubscribeFromMessages,
+    markMessagesAsRead,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
+  // Track which user's messages we last rendered for — detects the gap between
+  // selecting a new user and the useEffect firing to fetch their messages.
+  const lastLoadedUserIdRef = useRef(null);
+  const isTransitioning = lastLoadedUserIdRef.current !== selectedUser._id;
 
   useEffect(() => {
     getMessagesByUserId(selectedUser._id);
+    markMessagesAsRead(selectedUser._id); // clear unread badge when chat is opened
     subscribeToMessages();
 
-    // clean up
     return () => unsubscribeFromMessages();
-  }, [selectedUser, getMessagesByUserId, subscribeToMessages, unsubscribeFromMessages]);
+  }, [selectedUser, getMessagesByUserId, subscribeToMessages, unsubscribeFromMessages, markMessagesAsRead]);
+
+  // Update the ref once messages finish loading for the current user
+  useEffect(() => {
+    if (!isMessagesLoading) {
+      lastLoadedUserIdRef.current = selectedUser._id;
+    }
+  }, [isMessagesLoading, selectedUser._id]);
 
   useEffect(() => {
     if (messageEndRef.current) {
@@ -36,7 +48,7 @@ function ChatContainer() {
     <>
       <ChatHeader />
       <div className="flex-1 px-6 overflow-y-auto py-8">
-        {messages.length > 0 && !isMessagesLoading ? (
+        {!isMessagesLoading && messages.length > 0 ? (
           <div className="max-w-3xl mx-auto space-y-6">
             {messages.map((msg) => (
               <div
@@ -63,10 +75,11 @@ function ChatContainer() {
                 </div>
               </div>
             ))}
-            {/* 👇 scroll target */}
+            {/* scroll target */}
             <div ref={messageEndRef} />
           </div>
-        ) : isMessagesLoading ? (
+        ) : isMessagesLoading || isTransitioning ? (
+          // Show skeleton while loading, AND during the brief gap before isMessagesLoading is set
           <MessagesLoadingSkeleton />
         ) : (
           <NoChatHistoryPlaceholder name={selectedUser.fullName} />

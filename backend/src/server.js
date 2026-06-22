@@ -14,7 +14,20 @@ const __dirname = path.resolve();
 const PORT = ENV.PORT || 3000;
 
 app.use(express.json({ limit: "5mb" })); // req.body
-app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
+// Support multiple allowed origins (local dev + ngrok)
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (Postman, curl, server-to-server)
+      if (!origin || ENV.CLIENT_URL.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
@@ -30,7 +43,9 @@ if (ENV.NODE_ENV === "production") {
 }
 
 
-server.listen(PORT, () => {
-  console.log("Server running on port: " + PORT);
-  connectDB();
+// Connect to DB first, then start the server so requests don't hit an unavailable database
+connectDB().then(() => {
+  server.listen(PORT, () => {
+    console.log("Server running on port: " + PORT);
+  });
 });

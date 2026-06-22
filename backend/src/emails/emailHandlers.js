@@ -1,18 +1,13 @@
-import { resendClient, sender } from "../lib/resend.js";
+import { transporter, sender } from "../lib/nodemailer.js";
 import { createWelcomeEmailTemplate } from "../emails/emailTemplates.js";
 
 export const sendWelcomeEmail = async (email, name, clientURL) => {
-  const { data, error } = await resendClient.emails.send({
-    from: `${sender.name} <${sender.email}>`,
+  const info = await transporter.sendMail({
+    from: `"${sender.name}" <${sender.email}>`,
     to: email,
-    subject: "Welcome to buddy-chat!",
+    subject: "Welcome to Buddy Chat!",
     html: createWelcomeEmailTemplate(name, clientURL),
   });
 
-  if (error) {
-    console.error("Error sending welcome email:", error);
-    throw new Error("Failed to send welcome email");
-  }
-
-  console.log("Welcome Email sent successfully", data);
+  console.log("Welcome email sent successfully. Message ID:", info.messageId);
 };

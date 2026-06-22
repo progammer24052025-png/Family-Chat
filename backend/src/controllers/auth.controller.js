@@ -44,7 +44,7 @@ export const signup = async (req, res) => {
       // after CR:
       // Persist user first, then issue auth cookie
       const savedUser = await newUser.save();
-      generateToken(savedUser._id, res);
+      generateToken(savedUser._id, res, req);
 
       res.status(201).json({
         _id: newUser._id,
@@ -54,7 +54,7 @@ export const signup = async (req, res) => {
       });
 
       try {
-        await sendWelcomeEmail(savedUser.email, savedUser.fullName, ENV.CLIENT_URL);
+        await sendWelcomeEmail(savedUser.email, savedUser.fullName, ENV.CLIENT_URL[0]);
       } catch (error) {
         console.error("Failed to send welcome email:", error);
       }
@@ -82,7 +82,7 @@ export const login = async (req, res) => {
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
 
-    generateToken(user._id, res);
+    generateToken(user._id, res, req);
 
     res.status(200).json({
       _id: user._id,

@@ -63,6 +63,7 @@ export const sendMessage = async (req, res) => {
       receiverId,
       text,
       image: imageUrl,
+      readBy: [senderId], // sender has implicitly read their own message
     });
 
     await newMessage.save();
@@ -103,6 +104,65 @@ export const getChatPartners = async (req, res) => {
     res.status(200).json(chatPartners);
   } catch (error) {
     console.error("Error in getChatPartners: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getUnreadCounts = async (req, res) => {
+  try {
+    const myId = req.user._id;
+
+    // Count unread messages grouped by sender:
+    // messages where I am the receiver AND my ID is NOT in readBy
+    const unreadCounts = await Message.aggregate([
+      {
+        $match: {
+          receiverId: myId,
+          readBy: { $ne: myId },
+        },
+      },
+      {
+        $group: {
+          _id: "$senderId",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    res.status(200).json(unreadCounts);
+  } catch (error) {
+    console.error("Error in getUnreadCounts:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const markAsRead = async (req, res) => {
+  try {
+    const myId = req.user._id;
+    const { id: partnerId } = req.params;
+
+    // Add my ID to readBy for all unread messages from this partner
+    const result = await Message.updateMany(
+      {
+        senderId: partnerId,
+        receiverId: myId,
+        readBy: { $ne: myId },
+      },
+      { $addToSet: { readBy: myId } }
+    );
+
+    // Notify the partner (sender) that their messages have been read
+    const partnerSocketId = getReceiverSocketId(partnerId);
+    if (partnerSocketId) {
+      io.to(partnerSocketId).emit("messagesRead", {
+        readBy: myId,
+        partnerId: partnerId,
+      });
+    }
+
+    res.status(200).json({ modifiedCount: result.modifiedCount });
+  } catch (error) {
+    console.error("Error in markAsRead:", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
