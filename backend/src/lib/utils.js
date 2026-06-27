@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { ENV } from "./env.js";
+import { JWT_CONFIG, COOKIE_SETTINGS } from "./constants.js";
 
 export const generateToken = (userId, res, req) => {
   const { JWT_SECRET } = ENV;
@@ -8,7 +9,7 @@ export const generateToken = (userId, res, req) => {
   }
 
   const token = jwt.sign({ userId }, JWT_SECRET, {
-    expiresIn: "7d",
+    expiresIn: JWT_CONFIG.EXPIRATION,
   });
 
   // Detect cross-origin requests (e.g. frontend via ngrok hitting local backend).
@@ -22,11 +23,11 @@ export const generateToken = (userId, res, req) => {
   // cross-origin (ngrok https → localhost:3000): secure must be true
   const isProduction = ENV.NODE_ENV === "production";
 
-  res.cookie("jwt", token, {
-    maxAge: 7 * 24 * 60 * 60 * 1000, // MS
-    httpOnly: true, // prevent XSS attacks: cross-site scripting
-    sameSite: isProduction || isCrossOrigin ? "none" : "lax",
-    secure: isProduction || isCrossOrigin,
+  res.cookie(JWT_CONFIG.COOKIE_NAME, token, {
+    maxAge: JWT_CONFIG.EXPIRATION_MS,
+    httpOnly: COOKIE_SETTINGS.HTTP_ONLY,
+    sameSite: isProduction || isCrossOrigin ? COOKIE_SETTINGS.SAME_SITE_NONE : COOKIE_SETTINGS.SAME_SITE_LAX,
+    secure: isProduction || isCrossOrigin ? COOKIE_SETTINGS.SECURE_PROD : COOKIE_SETTINGS.SECURE_DEV,
   });
 
   return token;

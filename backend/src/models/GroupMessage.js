@@ -79,6 +79,25 @@ const groupMessageSchema = new mongoose.Schema(
         default: [],
       },
     ],
+
+    // isDeleted: Soft delete flag for group messages
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    // editedAt: Timestamp of last edit
+    editedAt: {
+      type: Date,
+    },
+
+    // isForwarded: Whether this message was forwarded from another chat or group.
+    // Shows "Forwarded" label in the UI (WhatsApp-style).
+    // - type: Boolean — defaults to false
+    isForwarded: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     // timestamps: true — Mongoose auto-adds createdAt and updatedAt.
@@ -86,6 +105,14 @@ const groupMessageSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Database indexes for faster query performance
+// Compound index: Optimize group message retrieval (most common query)
+groupMessageSchema.index({ groupId: 1, createdAt: -1 });
+// Index: Optimize unread message queries in groups
+groupMessageSchema.index({ groupId: 1, readBy: 1 });
+// Index: Optimize message search within groups
+groupMessageSchema.index({ text: "text" });
 
 // mongoose.model("GroupMessage", groupMessageSchema): Creates the GroupMessage model.
 // This model is used to:

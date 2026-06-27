@@ -6,6 +6,11 @@ import {
   sendMessage,
   getUnreadCounts,
   markAsRead,
+  editMessage,
+  deleteMessage,
+  toggleStarMessage,
+  getStarredMessages,
+  forwardMessage,
 } from "../controllers/message.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { arcjetProtection } from "../middleware/arcjet.middleware.js";
@@ -20,7 +25,12 @@ router.get("/contacts", getAllContacts);
 router.get("/chats", getChatPartners);
 router.get("/unread-counts", getUnreadCounts);
 router.put("/read/:id", markAsRead);
+router.get("/starred", getStarredMessages); // Get all starred messages
+router.post("/forward", forwardMessage); // Forward message to multiple users
 router.get("/:id", getMessagesByUserId);
 router.post("/send/:id", sendMessage);
+router.put("/:id", editMessage); // Edit message
+router.delete("/:id", deleteMessage); // Delete message
+router.put("/star/:messageId", toggleStarMessage); // Star/unstar message
 
 export default router;

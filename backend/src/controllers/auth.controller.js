@@ -24,6 +24,12 @@ import { sendWelcomeEmail } from "../emails/emailHandlers.js";
 // Defined in utils.js — we'll cover it later in the learning path.
 import { generateToken } from "../lib/utils.js";
 
+// validatePassword: Checks password strength against security requirements.
+import { validatePassword } from "../lib/passwordValidation.js";
+
+// logger: Winston logger for structured error logging
+import logger from "../lib/logger.js";
+
 // User: The Mongoose model for the "users" collection.
 // Used to create new users (signup) and find existing users (login).
 import User from "../models/User.js";
@@ -57,11 +63,11 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // --- STEP 2: Validate password length ---
-    // Passwords shorter than 6 characters are rejected.
-    // This is enforced here (controller) AND in the User schema (minlength: 6).
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    // --- STEP 2: Validate password strength ---
+    // Enforces modern security standards: min 8 chars, uppercase, lowercase, number, special char.
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({ message: passwordValidation.message });
     }
 
     // --- STEP 3: Validate email format ---
@@ -133,7 +139,7 @@ export const signup = async (req, res) => {
         // Used in the welcome email's "Open Family Chat" button link.
         await sendWelcomeEmail(savedUser.email, savedUser.fullName, ENV.CLIENT_URL[0]);
       } catch (error) {
-        console.error("Failed to send welcome email:", error);
+        logger.warn("Failed to send welcome email", { error: error.message, email: savedUser.email });
       }
     } else {
       // This branch is rarely hit — User constructor would throw before this.
@@ -141,7 +147,7 @@ export const signup = async (req, res) => {
     }
   } catch (error) {
     // Catch-all for any unexpected errors (database down, network issues, etc.).
-    console.log("Error in signup controller:", error);
+    logger.error("Error in signup controller", { error: error.message, stack: error.stack });
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -190,7 +196,7 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     // Catch-all for unexpected errors.
-    console.error("Error in login controller:", error);
+    logger.error("Error in login controller", { error: error.message, stack: error.stack });
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -249,7 +255,7 @@ export const updateProfile = async (req, res) => {
     res.status(200).json(updatedUser);
   } catch (error) {
     // Catch-all for errors (Cloudinary upload failed, DB error, etc.).
-    console.log("Error in update profile:", error);
+    logger.error("Error in update profile", { error: error.message, stack: error.stack });
     res.status(500).json({ message: "Internal server error" });
   }
 };

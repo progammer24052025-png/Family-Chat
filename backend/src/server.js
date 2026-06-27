@@ -38,6 +38,8 @@ import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import groupRoutes from "./routes/group.route.js";
 import pushRoutes from "./routes/push.route.js";
+import healthRoutes from "./routes/health.route.js";
+import friendRoutes from "./routes/friend.route.js";
 
 // connectDB: Function that establishes the MongoDB database connection.
 import { connectDB } from "./lib/db.js";
@@ -115,6 +117,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/push", pushRoutes);
+app.use("/api/health", healthRoutes);
+app.use("/api/friends", friendRoutes);
 
 // ---------- STEP 7: Production Setup (Deployment) ----------
 

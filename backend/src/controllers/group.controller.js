@@ -1,5 +1,7 @@
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
+import sanitizeHtml from "sanitize-html";
+import logger from "../lib/logger.js";
 import Group from "../models/Group.js";
 import GroupMessage from "../models/GroupMessage.js";
 
@@ -30,7 +32,7 @@ export const createGroup = async (req, res) => {
     await group.save();
     res.status(201).json(group);
   } catch (error) {
-    console.error("Error in createGroup:", error.message);
+    logger.error("Error in createGroup", { error: error.message });
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -205,12 +207,35 @@ export const getGroupMessages = async (req, res) => {
       return res.status(403).json({ message: "You are not a member of this group." });
     }
 
-    const messages = await GroupMessage.find({ groupId })
+    // Pagination parameters
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const cursor = req.query.cursor ? new Date(req.query.cursor) : null;
+
+    // Build query
+    const query = { groupId };
+    if (cursor) {
+      query.createdAt = { $lt: cursor };
+    }
+
+    // Fetch messages with pagination
+    const messages = await GroupMessage.find(query)
       .populate("senderId", "fullName profilePic")
-      .sort({ createdAt: 1 });
-    res.status(200).json(messages);
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .then((msgs) => msgs.reverse());
+
+    const hasMore = messages.length === limit;
+    const nextCursor = hasMore && messages.length > 0 
+      ? messages[0].createdAt.toISOString() 
+      : null;
+
+    res.status(200).json({
+      messages,
+      hasMore,
+      nextCursor,
+    });
   } catch (error) {
-    console.error("Error in getGroupMessages:", error.message);
+    logger.error("Error in getGroupMessages", { error: error.message });
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -239,6 +264,9 @@ export const sendGroupMessage = async (req, res) => {
       return res.status(403).json({ message: "Only the admin can send messages in a broadcast." });
     }
 
+    // Sanitize text input: Strip all HTML tags to prevent XSS attacks
+    const sanitizedText = text ? sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} }) : "";
+
     let imageUrl;
     if (image) {
       const uploadResponse = await cloudinary.uploader.upload(image);
@@ -248,7 +276,7 @@ export const sendGroupMessage = async (req, res) => {
     const newMessage = new GroupMessage({
       groupId,
       senderId,
-      text,
+      text: sanitizedText,
       image: imageUrl,
       readBy: [senderId],
     });
@@ -317,7 +345,96 @@ export const getGroupUnreadCounts = async (req, res) => {
 
     res.status(200).json(unreadCounts);
   } catch (error) {
-    console.error("Error in getGroupUnreadCounts:", error.message);
+    logger.error("Error in getGroupUnreadCounts", { error: error.message });
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// PUT /api/groups/messages/:id — Edit a group message (sender only)
+export const editGroupMessage = async (req, res) => {
+  try {
+    const { id: messageId } = req.params;
+    const { text } = req.body;
+    const myId = req.user._id;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: "Message text cannot be empty." });
+    }
+
+    const sanitizedText = sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} });
+
+    const message = await GroupMessage.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found." });
+    }
+
+    if (message.senderId.toString() !== myId.toString()) {
+      return res.status(403).json({ message: "You can only edit your own messages." });
+    }
+
+    if (message.isDeleted) {
+      return res.status(400).json({ message: "Cannot edit a deleted message." });
+    }
+
+    message.text = sanitizedText;
+    message.editedAt = new Date();
+    await message.save();
+
+    // Notify group members about the edit
+    const group = await Group.findById(message.groupId);
+    group.members.forEach((memberId) => {
+      if (memberId.toString() !== myId.toString()) {
+        const memberSocketId = getReceiverSocketId(memberId.toString());
+        if (memberSocketId) {
+          io.to(memberSocketId).emit("groupMessageEdited", message);
+        }
+      }
+    });
+
+    res.status(200).json(message);
+  } catch (error) {
+    logger.error("Error in editGroupMessage", { error: error.message });
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// DELETE /api/groups/messages/:id — Soft delete a group message (sender only)
+export const deleteGroupMessage = async (req, res) => {
+  try {
+    const { id: messageId } = req.params;
+    const myId = req.user._id;
+
+    const message = await GroupMessage.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found." });
+    }
+
+    if (message.senderId.toString() !== myId.toString()) {
+      return res.status(403).json({ message: "You can only delete your own messages." });
+    }
+
+    message.isDeleted = true;
+    message.text = "";
+    message.image = "";
+    await message.save();
+
+    // Notify group members about the deletion
+    const group = await Group.findById(message.groupId);
+    group.members.forEach((memberId) => {
+      if (memberId.toString() !== myId.toString()) {
+        const memberSocketId = getReceiverSocketId(memberId.toString());
+        if (memberSocketId) {
+          io.to(memberSocketId).emit("groupMessageDeleted", {
+            messageId: message._id,
+            isDeleted: true,
+          });
+        }
+      }
+    });
+
+    res.status(200).json({ message: "Message deleted successfully." });
+  } catch (error) {
+    logger.error("Error in deleteGroupMessage", { error: error.message });
     res.status(500).json({ error: "Internal server error" });
   }
 };

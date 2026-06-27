@@ -42,14 +42,15 @@ const userSchema = new mongoose.Schema(
 
     // password: The user's hashed password (NEVER stored in plain text).
     // - required: true — signup requires a password
-    // - minlength: 6 — passwords shorter than 6 characters are rejected
+    // - minlength: 8 — passwords shorter than 8 characters are rejected
     //   This is enforced at the database level by Mongoose.
     // IMPORTANT: The password stored in the database is hashed using bcrypt
     // (done in auth.controller.js before saving). The raw password is NEVER saved.
+    // Additionally, the controller enforces complexity requirements (uppercase, lowercase, number, special char).
     password: {
       type: String,
       required: true,
-      minlength: 6,
+      minlength: 8,
     },
 
     // profilePic: URL to the user's profile picture (stored on Cloudinary).
@@ -60,6 +61,42 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    // friends: Array of User ObjectIds representing this user's friends.
+    // Users can only message/forward to people in their friends list.
+    // - type: Array of ObjectId — each references a User document
+    // - ref: "User" — enables .populate("friends") to get full friend details
+    // - default: [] — new users start with no friends
+    friends: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: [],
+      },
+    ],
+
+    // friendRequests: Array of pending friend requests.
+    // Each request tracks who sent it and its current status.
+    // - from: The user who sent the request
+    // - status: 'pending' (waiting for response), 'accepted', or 'rejected'
+    friendRequests: [
+      {
+        from: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        status: {
+          type: String,
+          enum: ["pending", "accepted", "rejected"],
+          default: "pending",
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   {
     // timestamps: true — Mongoose automatically adds two fields:

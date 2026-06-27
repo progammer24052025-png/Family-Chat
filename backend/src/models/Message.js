@@ -84,6 +84,71 @@ const messageSchema = new mongoose.Schema(
         default: [],
       },
     ],
+
+    // isDeleted: Soft delete flag for messages.
+    // Instead of physically deleting messages from the database, we mark them as deleted.
+    // This preserves chat history integrity and allows showing "[Message deleted]" placeholder.
+    // - type: Boolean — true if message was deleted by sender
+    // - default: false — messages are not deleted by default
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    // editedAt: Timestamp of when the message was last edited.
+    // Only set when the message is updated (edited by sender).
+    // Used to show "edited" label in the UI.
+    // - type: Date — stores the edit timestamp
+    // - Optional — only present if message has been edited
+    editedAt: {
+      type: Date,
+    },
+
+    // replyTo: Reference to the message this is replying to.
+    // Enables WhatsApp-style threaded replies where a message quotes the original.
+    // - messageId: The _id of the original message being replied to
+    // - senderId: The sender of the original message (for display)
+    // - text: First 100 characters of the original message (truncated for preview)
+    // - image: Boolean indicating if original message had an image
+    replyTo: {
+      messageId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Message",
+      },
+      senderId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      senderName: {
+        type: String,
+      },
+      text: {
+        type: String,
+        maxlength: 100, // Store truncated preview
+      },
+      hasImage: {
+        type: Boolean,
+        default: false,
+      },
+    },
+
+    // isStarred: Whether the current user has starred this message.
+    // Enables WhatsApp-style message bookmarking for quick access later.
+    // Starred messages are user-specific (each user has their own starred list).
+    // - type: Boolean — defaults to false (not starred)
+    // - Used to show star icon and filter starred messages
+    isStarred: {
+      type: Boolean,
+      default: false,
+    },
+
+    // isForwarded: Whether this message was forwarded from another chat.
+    // Shows "Forwarded" label in the UI (WhatsApp-style).
+    // - type: Boolean — defaults to false
+    isForwarded: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     // timestamps: true — Mongoose auto-adds createdAt and updatedAt.
@@ -91,6 +156,14 @@ const messageSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Database indexes for faster query performance
+// Compound index: Optimize conversation message retrieval (most common query)
+messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
+// Index: Optimize unread message queries
+messageSchema.index({ receiverId: 1, readBy: 1 });
+// Index: Optimize message search (text search across message content)
+messageSchema.index({ text: "text" });
 
 // mongoose.model("Message", messageSchema): Creates the Message model.
 // This model is used to:
