@@ -90,16 +90,7 @@ function ChatPage() {
             isRightPanelOpen || showStarredMessages ? "flex" : "hidden md:flex"
           }`}
         >
-          {/* Mobile Back Button */}
-          {(selectedUser || selectedGroup) && (
-            <button
-              onClick={handleBackToContacts}
-              className="md:hidden flex items-center gap-2 px-4 py-3 bg- dark: border-b border-[#075E54] dark:border-slate-700 text-white hover:bg-[#064d45] dark:hover:bg-[#064d45] transition-colors"
-            >
-              <ArrowLeft size={20} />
-              <span className="text-sm font-medium">Back</span>
-            </button>
-          )}
+
 
           {showStarredMessages && <StarredMessagesView />}
           {!showStarredMessages && selectedUser && <ChatContainer />}
