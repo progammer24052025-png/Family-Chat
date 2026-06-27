@@ -71,10 +71,20 @@ function GroupContainer() {
   };
 
   return (
-    <div className="flex flex-col min-h-0 overflow-hidden h-full">
+    <div className="flex flex-col min-h-0 overflow-hidden h-full relative">
+      {/* WhatsApp-style doodle background */}
+      <div 
+        className="absolute inset-0 opacity-[0.08] dark:opacity-[0.1] pointer-events-none"
+        style={{
+          backgroundImage: "url('/chat-bg.jpg')",
+          backgroundSize: "400px",
+          backgroundRepeat: "repeat",
+        }}
+      />
+        
       <GroupHeader />
-
-      <div className="flex-1 px-6 overflow-y-auto py-8 overscroll-contain">
+        
+      <div className="flex-1 px-6 overflow-y-auto py-8 overscroll-contain relative z-10">
         {groupMessages.length > 0 && !isGroupMessagesLoading ? (
           <div className="max-w-3xl mx-auto space-y-6">
             {groupMessages.map((msg) => {
@@ -82,21 +92,22 @@ function GroupContainer() {
               return (
                 <div
                   key={msg._id}
-                  className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`}
+                  className={`flex ${isOwnMessage ? "justify-end" : "justify-start"} mb-4`}
                 >
-                  {/* Sender name for group (not broadcast, not own message) */}
-                  {!isBroadcast && !isOwnMessage && (
-                    <div className="chat-header text-slate-400 text-xs mb-1">
-                      {msg.senderId?.fullName || "Unknown"}
-                    </div>
-                  )}
-                  <div
-                    className={`chat-bubble relative ${
-                      isOwnMessage
-                        ? "bg-cyan-600 text-white"
-                        : "bg-slate-800 text-slate-200"
-                    }`}
-                  >
+                  <div className="max-w-[75%] md:max-w-[65%]">
+                    {/* Sender name for group (not broadcast, not own message) */}
+                    {!isBroadcast && !isOwnMessage && (
+                      <div className="text-slate-500 dark:text-slate-400 text-xs mb-1 ml-2">
+                        {msg.senderId?.fullName || "Unknown"}
+                      </div>
+                    )}
+                    <div
+                      className={`px-4 py-2.5 rounded-2xl relative ${
+                        isOwnMessage
+                          ? "bg-cyan-500 text-white rounded-br-md"
+                          : "bg-[#FFFFFF] dark:bg-slate-800 text-[#111111] dark:text-slate-200 rounded-bl-md border border-[#E9EDEF] dark:border-slate-700"
+                      }`}
+                    >
                     {msg.image && (
                       <img src={msg.image} alt="Shared" className="rounded-lg h-48 object-cover" />
                     )}
@@ -111,7 +122,7 @@ function GroupContainer() {
 
                   {/* Reply privately button for broadcasts (non-admin, not own message) */}
                   {isBroadcast && !isOwnMessage && (
-                    <div className="chat-footer mt-1">
+                    <div className="mt-1 ml-2">
                       <button
                         onClick={() => {
                           const admin = selectedGroup.admin;
@@ -119,12 +130,13 @@ function GroupContainer() {
                           useChatStore.getState().setActiveTab("chats");
                           useChatStore.getState().setSelectedUser(admin);
                         }}
-                        className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+                        className="text-xs text-cyan-500 hover:text-cyan-600 transition-colors"
                       >
                         ↩ Reply privately
                       </button>
                     </div>
                   )}
+                  </div>
                 </div>
               );
             })}

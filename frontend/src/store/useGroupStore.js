@@ -11,6 +11,8 @@ export const useGroupStore = create((set, get) => ({
   isGroupsLoading: false,
   isGroupMessagesLoading: false,
   groupUnreadCounts: {}, // { [groupId]: count }
+  hasMoreGroups: false, // Pagination: more group messages available
+  nextGroupCursor: null, // Pagination: cursor for loading older group messages
 
   setSelectedGroup: (selectedGroup) => set({ selectedGroup }),
 
@@ -56,7 +58,12 @@ export const useGroupStore = create((set, get) => ({
     set({ isGroupMessagesLoading: true });
     try {
       const res = await axiosInstance.get(`/groups/${groupId}/messages`);
-      set({ groupMessages: res.data });
+      // Backend now returns paginated response: { messages: [...], hasMore, nextCursor }
+      set({ 
+        groupMessages: res.data.messages || res.data, // Support both formats
+        hasMoreGroups: res.data.hasMore || false,
+        nextGroupCursor: res.data.nextCursor || null,
+      });
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to load messages.");
     } finally {
@@ -64,9 +71,37 @@ export const useGroupStore = create((set, get) => ({
     }
   },
 
+  // Load older group messages (pagination)
+  loadOlderGroupMessages: async (groupId) => {
+    const { nextGroupCursor, groupMessages } = get();
+    if (!nextGroupCursor) return; // No more messages to load
+
+    try {
+      const res = await axiosInstance.get(`/groups/${groupId}/messages`, {
+        params: {
+          limit: 50,
+          cursor: nextGroupCursor,
+        },
+      });
+
+      // Prepend older messages to the existing list
+      const olderMessages = res.data.messages || res.data;
+      set({
+        groupMessages: [...olderMessages, ...groupMessages],
+        hasMoreGroups: res.data.hasMore || false,
+        nextGroupCursor: res.data.nextCursor || null,
+      });
+    } catch (error) {
+      toast.error("Failed to load older messages");
+    }
+  },
+
   sendGroupMessage: async (messageData) => {
     const { selectedGroup, groupMessages } = get();
     const { authUser } = useAuthStore.getState();
+
+    // Ensure groupMessages is always an array
+    const messagesArray = Array.isArray(groupMessages) ? groupMessages : [];
 
     const tempId = `temp-${Date.now()}`;
     const optimisticMessage = {
@@ -79,7 +114,7 @@ export const useGroupStore = create((set, get) => ({
       isOptimistic: true,
     };
 
-    set({ groupMessages: [...groupMessages, optimisticMessage] });
+    set({ groupMessages: [...messagesArray, optimisticMessage] });
 
     try {
       const res = await axiosInstance.post(`/groups/${selectedGroup._id}/send`, messageData);
@@ -91,7 +126,7 @@ export const useGroupStore = create((set, get) => ({
       });
     } catch (error) {
       // Remove optimistic message on failure
-      set({ groupMessages: groupMessages });
+      set({ groupMessages: messagesArray });
       toast.error(error.response?.data?.message || "Failed to send message.");
     }
   },

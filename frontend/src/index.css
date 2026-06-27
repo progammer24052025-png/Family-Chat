@@ -8,8 +8,51 @@
   syntax: "<angle>";
 }
 
+/* Mobile app optimizations */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html {
+  overflow: hidden;
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+  height: 100%;
+  margin: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Prevent overscroll bounce on mobile */
+.overscroll-contain {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Touch-friendly scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.5);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+/* Input styles - works in both light and dark mode */
 .input {
-  @apply w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 focus:border-transparent;
+  @apply w-full bg-white dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-lg py-2.5 px-4 text-slate-900 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors;
 }
 
 .auth-input-icon {
@@ -32,4 +75,19 @@
 .auth-link {
   @apply px-4 py-2 inline-block bg-cyan-500/10 rounded-lg text-cyan-400
   hover:text-cyan-500 text-sm transition-colors;
+}
+
+/* Avatar styles */
+.avatar {
+  @apply relative inline-block;
+}
+
+.avatar.online::before {
+  content: "";
+  @apply absolute bottom-0.5 right-0.5 size-3 bg-green-500 border-2 border-slate-800 dark:border-slate-900 rounded-full;
+}
+
+.avatar.offline::before {
+  content: "";
+  @apply absolute bottom-0.5 right-0.5 size-3 bg-slate-400 border-2 border-slate-800 dark:border-slate-900 rounded-full;
 }
