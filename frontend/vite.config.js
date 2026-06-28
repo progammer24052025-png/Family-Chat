@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: '0.0.0.0',
     // Proxy API and WebSocket traffic to the backend so all requests are same-origin.
     // This makes the app work both locally AND via ngrok from other devices.
     proxy: {

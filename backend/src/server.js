@@ -151,7 +151,7 @@ connectDB().then(() => {
   // server.listen(): Starts the HTTP server on the chosen port.
   // `server` (not `app`) is used because Socket.io needs the raw HTTP server
   // to handle WebSocket protocol upgrades (HTTP → WebSocket).
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log("Server running on port: " + PORT);
   });
 });
