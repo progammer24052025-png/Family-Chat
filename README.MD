@@ -1,6 +1,14 @@
-<h1 align="center">✨ Full-Stack Chat App with Auth & Emails ✨</h1>
+# ✨ Full-Stack Chat App with Auth & Emails ✨
 
-Highlights:
+> **Made by Rudraksh Patel** ‍💻
+
+A modern, real-time family chat application with secure authentication, instant messaging, and beautiful UI.
+
+ **Live Demo:** [https://family-chat-eqff.vercel.app](https://family-chat-eqff.vercel.app)
+
+---
+
+## ✨ Highlights
 
 - 🔐 Custom JWT Authentication (no 3rd-party auth)
 - ⚡ Real-time Messaging via Socket.io
@@ -61,3 +69,40 @@ cd frontend
 npm install
 npm run dev
 ```
+
+---
+
+## 🌐 Deployment
+
+This app is deployed on free-tier hosting platforms:
+
+- **Frontend:** Vercel - [https://family-chat-eqff.vercel.app](https://family-chat-eqff.vercel.app)
+- **Backend:** Render - [https://family-chat-bwy9.onrender.com](https://family-chat-bwy9.onrender.com)
+- **Database:** MongoDB Atlas (Cloud)
+
+### Deployment Architecture
+
+```
+Frontend (Vercel) → Backend API (Render) → Database (MongoDB Atlas)
+       ↓
+WebSocket (Socket.io) → Render Backend
+```
+
+---
+
+## 👨‍💻 Developer
+
+**Rudraksh Patel**
+
+-  GitHub: [progammer24052025-png](https://github.com/progammer24052025-png)
+- 📧 Email: progammer.24052025@gmail.com
+
+---
+
+## 📜 License
+
+This project is open-source and available under the ISC License.
+
+---
+
+**Built with ❤️ by Rudraksh Patel**
