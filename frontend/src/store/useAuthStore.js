@@ -5,7 +5,9 @@ import { io } from "socket.io-client";
 
 // Socket URL: empty string = connect to current host (works via Vite proxy on any device).
 // Override with VITE_SOCKET_URL env var if the backend is on a different host (e.g. ngrok tunnel for backend).
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "";
+// In production, connect directly to Render backend since Vercel doesn't support WebSockets.
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 
+  (import.meta.env.PROD ? "https://family-chat-bwy9.onrender.com" : "");
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
