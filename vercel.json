@@ -1,5 +1,14 @@
 {
+  "rootDirectory": "frontend",
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://family-chat-bwy9.onrender.com/api/$1"
+    },
+    {
+      "source": "/socket.io/(.*)",
+      "destination": "https://family-chat-bwy9.onrender.com/socket.io/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
@@ -24,8 +33,5 @@
         }
       ]
     }
-  ],
-  "buildCommand": "npm run build --prefix frontend",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "npm install --prefix frontend"
+  ]
 }
