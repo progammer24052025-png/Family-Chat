@@ -1,5 +1,6 @@
 import logger from "../lib/logger.js";
 import User from "../models/User.js";
+import { sendPushToUser } from "../lib/pushService.js";
 
 // Send a friend request
 export const sendFriendRequest = async (req, res) => {
@@ -34,6 +35,30 @@ export const sendFriendRequest = async (req, res) => {
     // Add friend request to receiver's list
     receiver.friendRequests.push({ from: senderId, status: "pending" });
     await receiver.save();
+
+    // Send push notification to receiver
+    const sender = await User.findById(senderId).select("fullName profilePic");
+    await sendPushToUser(userId, {
+      title: "New Friend Request",
+      body: `${sender.fullName} wants to connect with you`,
+      icon: sender.profilePic || "/avatar.png",
+      data: {
+        type: "friend_request",
+        fromUserId: senderId.toString(),
+        requestId: receiver.friendRequests[receiver.friendRequests.length - 1]._id.toString()
+      },
+      // Android action buttons
+      android: {
+        actions: [
+          { action: "accept", title: "Accept", icon: "accept_icon" },
+          { action: "reject", title: "Reject", icon: "reject_icon" }
+        ]
+      },
+      // iOS action categories (configured in iOS app)
+      aps: {
+        category: "FRIEND_REQUEST"
+      }
+    });
 
     res.status(200).json({ message: "Friend request sent successfully." });
   } catch (error) {
@@ -76,6 +101,18 @@ export const acceptFriendRequest = async (req, res) => {
     await user.save();
     await sender.save();
 
+    // Send notification to sender that their request was accepted
+    const receiver = await User.findById(userId).select("fullName profilePic");
+    await sendPushToUser(request.from, {
+      title: "Friend Request Accepted",
+      body: `${receiver.fullName} accepted your friend request`,
+      icon: receiver.profilePic || "/avatar.png",
+      data: {
+        type: "friend_request",
+        status: "accepted"
+      }
+    });
+
     res.status(200).json({ message: "Friend request accepted." });
   } catch (error) {
     logger.error("Error in acceptFriendRequest", { error: error.message });
@@ -103,6 +140,18 @@ export const rejectFriendRequest = async (req, res) => {
     // Update request status
     request.status = "rejected";
     await user.save();
+
+    // Send notification to sender that their request was rejected
+    const receiver = await User.findById(userId).select("fullName profilePic");
+    await sendPushToUser(request.from, {
+      title: "Friend Request Rejected",
+      body: `${receiver.fullName} declined your friend request`,
+      icon: receiver.profilePic || "/avatar.png",
+      data: {
+        type: "friend_request",
+        status: "rejected"
+      }
+    });
 
     res.status(200).json({ message: "Friend request rejected." });
   } catch (error) {

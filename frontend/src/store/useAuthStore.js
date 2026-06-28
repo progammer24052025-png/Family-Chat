@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
+import { registerForPushNotifications, unregisterFromPushNotifications } from "../services/notificationService";
 
 // Socket URL: empty string = connect to current host (works via Vite proxy on any device).
 // Override with VITE_SOCKET_URL env var if the backend is on a different host (e.g. ngrok tunnel for backend).
@@ -38,6 +39,9 @@ export const useAuthStore = create((set, get) => ({
 
       toast.success("Account created successfully!");
       get().connectSocket();
+      
+      // Register for push notifications on mobile
+      await registerForPushNotifications();
     } catch (error) {
       toast.error(error.response?.data?.message || "Network error. Please try again.");
     } finally {
@@ -54,6 +58,9 @@ export const useAuthStore = create((set, get) => ({
       toast.success("Logged in successfully");
 
       get().connectSocket();
+      
+      // Register for push notifications on mobile
+      await registerForPushNotifications();
     } catch (error) {
       toast.error(error.response?.data?.message || "Network error. Please try again.");
     } finally {
@@ -67,6 +74,9 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: null });
       toast.success("Logged out successfully");
       get().disconnectSocket();
+      
+      // Unregister from push notifications
+      await unregisterFromPushNotifications();
     } catch (error) {
       toast.error("Error logging out");
       console.log("Logout error:", error);

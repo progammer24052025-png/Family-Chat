@@ -17,6 +17,11 @@
 html {
   overflow: hidden;
   height: 100%;
+  /* Safe area insets for notched devices (iPhone notch/home bar) */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 body {

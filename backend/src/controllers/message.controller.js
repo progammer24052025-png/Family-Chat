@@ -135,6 +135,11 @@ export const sendMessage = async (req, res) => {
         title: sender.fullName,
         body: text || "Sent an image",
         icon: sender.profilePic || "/avatar.png",
+        data: {
+          type: "message",
+          chatId: senderId.toString(),
+          messageId: newMessage._id.toString()
+        }
       });
     }
 
