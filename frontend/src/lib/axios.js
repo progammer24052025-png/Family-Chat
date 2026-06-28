@@ -1,9 +1,12 @@
 import axios from "axios";
 
-// Relative URL: in dev, Vite's proxy forwards /api to localhost:3000;
-// in production, the backend serves the frontend at the same origin.
-// This works from any device — including via ngrok.
+// API URL configuration:
+// - Development: Uses Vite proxy (relative URL "/api")
+// - Production: Direct connection to Render backend
+const API_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD ? "https://buddy-chat-bwy9.onrender.com" : "");
+
 export const axiosInstance = axios.create({
-  baseURL: "/api",
+  baseURL: API_URL ? `${API_URL}/api` : "/api",
   withCredentials: true,
 });
