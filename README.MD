@@ -77,7 +77,7 @@ npm run dev
 This app is deployed on free-tier hosting platforms:
 
 - **Frontend:** Vercel - [https://family-chat-eqff.vercel.app](https://family-chat-eqff.vercel.app)
-- **Backend:** Render - [https://family-xxxxxxxxxxx]
+- **Backend:** Render
 - **Database:** MongoDB Atlas (Cloud)
 
 ### Deployment Architecture
