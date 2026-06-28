@@ -4,11 +4,12 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import { registerForPushNotifications, unregisterFromPushNotifications } from "../services/notificationService";
 
-// Socket URL: empty string = connect to current host (works via Vite proxy on any device).
-// Override with VITE_SOCKET_URL env var if the backend is on a different host (e.g. ngrok tunnel for backend).
-// In production, connect directly to Render backend since Vercel doesn't support WebSockets.
+// Socket URL configuration:
+// - Web development: Empty string (uses Vite proxy to localhost:3000)
+// - Web production (Vercel): Direct connection to Render backend
+// - Mobile app (Capacitor): Direct connection to Render backend
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 
-  (import.meta.env.PROD ? "https://family-chat-bwy9.onrender.com" : "");
+  "https://family-chat-bwy9.onrender.com";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
